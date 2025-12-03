@@ -9,7 +9,7 @@ from src.repositories.chat_repository import (
     create_chat_session,
     update_chat_session
 )
-from src.schemas.chat import ChatSessionRequest
+from src.schemas.chat_schemas import ChatSessionRequest
 
 
 class ChatSessionManager:
