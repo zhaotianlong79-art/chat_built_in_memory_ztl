@@ -5,92 +5,11 @@ from loguru import logger
 from openai import OpenAI
 
 from src.repositories.chat_repository import (
-    get_chat_session_by_session_id,
     create_chat_session,
-    update_chat_session
+    get_chat_session,
+    add_message_chat_session
 )
 from src.schemas.chat_schemas import ChatSessionRequest
-
-
-class ChatSessionManager:
-    """
-    封装 AI 调用 & 会话存储
-    自动：
-    - 读取历史
-    - 添加 user 消息
-    - 调用 openai
-    - 添加 assistant 消息
-    - 保存回 MongoDB
-    """
-
-    def __init__(
-            self,
-            session_id: str,
-            user_id: str,
-            model: str = "qwen",
-            api_key: str = "zhaokunmingshidashuaibi.",
-            base_url: str = "https://cm-vrag.sci-brain.cn/api/v1"
-
-    ):
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
-        self.session_id = session_id
-        self.user_id = user_id
-        self.model = model
-        self.messages: List = []
-
-    # ------------------ 1. 初始化加载历史 --------------------
-
-    async def load_or_create(self):
-        """加载已有会话，或创建一个新的"""
-        session = await get_chat_session_by_session_id(self.session_id)
-
-        if session:
-            logger.info(f"Loaded existing session: {self.session_id}")
-            self.messages = session.messages
-            return
-
-        logger.info(f"No session found. Create new session: {self.session_id}")
-        new_session = await create_chat_session(
-            user_id=self.user_id,
-            session_id=self.session_id,
-            messages=[]
-        )
-        self.messages = new_session.messages
-
-    # ------------------ 2. 增加消息 --------------------
-
-    def add_user_message(self, text: str):
-        self.messages.append({"role": "user", "content": text})
-
-    def add_assistant_message(self, text: str):
-        self.messages.append({"role": "assistant", "content": text})
-
-    # ------------------ 3. 调用 OpenAI --------------------
-
-    async def chat(self, user_text: str) -> str:
-        """主方法：处理对话 & 保存到 MongoDB"""
-
-        # 1. 添加 user 消息
-        self.add_user_message(user_text)
-
-        # 2. 调用 openai
-        resp = self.client.chat.completions.create(
-            model=self.model,
-            messages=self.messages
-        )
-        reply = resp.choices[0].message["content"]
-
-        # 3. 保存 assistant 消息
-        self.add_assistant_message(reply)
-
-        # 4. 更新 MongoDB
-        await update_chat_session(
-            user_id=self.user_id,
-            session_id=self.session_id,
-            messages=self.messages
-        )
-
-        return reply
 
 
 def get_user_content(user_text: str):
@@ -118,37 +37,47 @@ class StreamChatSessionManager:
             model: str = "qwen",
             api_key: str = "zhaokunmingshidashuaibi.",
             base_url: str = "https://cm-vrag.sci-brain.cn/api/v1"
-
     ):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.session_id = session_id
         self.user_id = user_id
         self.model = model
-        self.messages: List = []
+        self.messages: List[dict] = []  # 明确类型注解
 
     # ------------------ 加载会话 ------------------
     async def load_or_create(self):
-        session = await get_chat_session_by_session_id(self.session_id)
-        if session:
-            logger.info(f"Loaded session {self.session_id}")
-            self.messages = session.messages
-        else:
-            logger.info(f"Creating new session {self.session_id}")
-            new_session = await create_chat_session(self.user_id, self.session_id, [])
-            self.messages = new_session.messages
+        """加载或创建会话，初始化 self.messages"""
+        try:
+            session = await get_chat_session(
+                user_id=self.user_id,
+                session_id=self.session_id
+            )
+
+            if session:
+                logger.info(f"Loaded session {self.session_id}")
+                self.messages = [dict(m) for m in (session.messages or [])]
+            else:
+                logger.info(f"Creating new session {self.session_id}")
+                # 创建空会话
+                await create_chat_session(
+                    user_id=self.user_id,
+                    session_id=self.session_id,
+                    messages=[]
+                )
+                self.messages = []
+
+        except Exception as e:
+            logger.error(f"Error loading session: {e}")
+            self.messages = []
 
     # ------------------ 流式对话 ------------------
     async def stream_chat(self, user_text: str) -> AsyncGenerator[str, None]:
-        """
-        流式输出的对话流程：
-        1. 插入 user 消息
-        2. 调用 OpenAI stream=True
-        3. yield 每个 chunk
-        4. 全部结束后，拼接完整回答并写回 MongoDB
-        """
+        """流式对话并保存完整 messages"""
 
-        # 1. 添加 user 消息
-        self.messages.append(get_user_content(user_text))
+        # 1. 添加 user 消息到本地内存
+        user_message = get_user_content(user_text)
+        self.messages.append(user_message)
+        await self._save_single_message(user_message)
 
         # 2. 创建 stream 连接
         stream = self.client.chat.completions.create(
@@ -168,15 +97,35 @@ class StreamChatSessionManager:
                 final_answer += chunk
                 yield chunk
 
-        # 4. assistant 完整回复写入会话
-        self.messages.append(get_assistant_content(final_answer))
+        # 4. 添加 assistant 回复到本地内存
+        assistant_message = get_assistant_content(final_answer)
+        self.messages.append(assistant_message)
+        await self._save_single_message(assistant_message)
 
-        # 5. 保存到 MongoDB
-        await update_chat_session(
-            user_id=self.user_id,
-            session_id=self.session_id,
-            messages=self.messages
-        )
+    async def _save_single_message(self, message) -> bool:
+
+        try:
+
+            result = await add_message_chat_session(self.session_id, self.user_id, message)
+            return result > 0
+
+        except Exception as e:
+            logger.error(f"Failed to save full messages: {e}")
+            return False
+
+    async def clear_messages(self):
+        """清空消息历史"""
+        self.messages = []
+        await self._save_full_messages()
+        logger.info(f"Cleared messages for session {self.session_id}")
+
+    async def get_message_count(self) -> int:
+        """获取消息数量"""
+        return len(self.messages)
+
+    async def reload_messages(self):
+        """从数据库重新加载 messages"""
+        await self.load_or_create()
 
 
 def get_default_model_stream(session_id: str, user_id: str, chunk: str, event: str = 'add'):
