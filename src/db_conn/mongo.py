@@ -2,7 +2,7 @@
 from mongoengine import connect, disconnect
 
 from src.config.config import settings
-
+from loguru import logger
 
 def init_mongo_db():
     connect(
@@ -16,7 +16,9 @@ def init_mongo_db():
         minPoolSize=5,
         maxPoolSize=50
     )
+    logger.info(f"MongoDB {settings.MONGO_DB} connected")
 
 
 def close_mongo_db():
     disconnect(alias=settings.MONGO_DB)
+    logger.info(f"MongoDB {settings.MONGO_DB} disconnected")
