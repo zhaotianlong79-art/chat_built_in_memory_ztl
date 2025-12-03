@@ -61,9 +61,9 @@ async def get_chat_session_by_session_id(session_id: str) -> Optional[ChatHistor
         Optional[ChatHistory]: 会话对象，如果不存在则返回None
     """
     try:
-        return ChatHistory.objects.get(session_id=session_id)
+        return ChatHistory.objects(session_id=session_id).first()
     except Exception as e:
-        logger.error(f"Error getting chat session by session_id: {traceback.format_exception()}")
+        logger.error(f"Error getting chat session by session_id: {traceback.format_exception(e)}")
         return None
 
 
