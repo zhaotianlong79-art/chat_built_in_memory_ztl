@@ -8,6 +8,7 @@ from opentelemetry.sdk.trace import TracerProvider
 
 from src.config.config import settings
 from src.config.openapi_docs import get_swagger_ui_html
+from src.db_conn.mongo import init_mongo_db, close_mongo_db
 from src.handlers import include_routers
 from src.middleware.log import init_stdout_logger
 from loguru import logger
@@ -43,9 +44,11 @@ init_stdout_logger()
 async def lifespan(app: FastAPI):
     """应用生命周期"""
     logger.info("Starting up")
+    init_mongo_db()
     try:
         yield
     finally:
+        close_mongo_db()
         logger.info("Application shutdown")
 
 
