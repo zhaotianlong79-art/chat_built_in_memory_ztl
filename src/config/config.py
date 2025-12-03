@@ -28,7 +28,13 @@ class Settings(BaseSettings):
 
     DEBUG: bool = True
 
-
+    MONGO_DB: str = "XX"
+    MONGO_HOST: str = "XX"
+    MONGO_PORT: int = 28018
+    MONGO_USER: str = "XXX"
+    MONGO_PASSWORD: str = "XXX"
+    MONGO_AUTH_SOURCE: str = "XXX"
+    MONGO_CONN_NAME: str = "XXX"
 
     class Config:
         env_file = ".env"
