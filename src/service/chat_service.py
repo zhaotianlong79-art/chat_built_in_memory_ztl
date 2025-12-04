@@ -7,7 +7,7 @@ from openai import OpenAI
 from src.repositories.chat_repository import (
     create_chat_session,
     get_chat_session,
-    add_message_chat_session
+    update_chat_session
 )
 from src.schemas.chat_schemas import ChatSessionRequest
 
@@ -62,9 +62,7 @@ class StreamChatSessionManager:
                 await create_chat_session(
                     user_id=self.user_id,
                     session_id=self.session_id,
-                    messages=[]
                 )
-                self.messages = []
 
         except Exception as e:
             logger.error(f"Error loading session: {e}")
@@ -77,7 +75,6 @@ class StreamChatSessionManager:
         # 1. 添加 user 消息到本地内存
         user_message = get_user_content(user_text)
         self.messages.append(user_message)
-        await self._save_single_message(user_message)
 
         # 2. 创建 stream 连接
         stream = self.client.chat.completions.create(
@@ -100,14 +97,21 @@ class StreamChatSessionManager:
         # 4. 添加 assistant 回复到本地内存
         assistant_message = get_assistant_content(final_answer)
         self.messages.append(assistant_message)
-        await self._save_single_message(assistant_message)
+        await self._save_message()
 
-    async def _save_single_message(self, message) -> bool:
+    async def _save_message(self, ) -> bool:
 
         try:
 
-            return await add_message_chat_session(self.session_id, self.user_id, message)
-
+            res = await update_chat_session(
+                user_id=self.user_id,
+                session_id=self.session_id,
+                messages=self.messages
+            )
+            if res:
+                logger.info(f"Saved message for session {self.session_id}")
+                return True
+            return False
         except Exception as e:
             logger.error(f"Failed to save full messages: {e}")
             return False
