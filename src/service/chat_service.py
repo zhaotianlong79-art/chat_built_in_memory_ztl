@@ -106,8 +106,7 @@ class StreamChatSessionManager:
 
         try:
 
-            result = await add_message_chat_session(self.session_id, self.user_id, message)
-            return result > 0
+            return await add_message_chat_session(self.session_id, self.user_id, message)
 
         except Exception as e:
             logger.error(f"Failed to save full messages: {e}")
