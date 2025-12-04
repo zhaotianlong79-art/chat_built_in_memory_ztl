@@ -9,16 +9,13 @@ from src.models.mongo import ChatHistory
 async def create_chat_session(
         user_id: str,
         session_id: str,
-        messages: Optional[List] = None
 ) -> ChatHistory:
     """创建新的聊天会话"""
-    if messages is None:
-        messages = []
+
 
     session = ChatHistory.objects.create(
         session_id=session_id,
-        user_id=user_id,
-        messages=messages
+        user_id=user_id
     )
     return session
 

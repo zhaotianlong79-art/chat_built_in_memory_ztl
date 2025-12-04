@@ -36,7 +36,7 @@ class ChatHistory(BaseDocument):
     }
     session_id = StringField()  # 会话id
     user_id = StringField()  # 用户id
-    messages = ListField(DictField())  # 消息列表
+    messages = ListField(DictField(), default=list)  # 消息列表
 
     def to_dict(self):
         """将MongoEngine文档对象转换为可序列化的字典"""
