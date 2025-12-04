@@ -9,4 +9,4 @@ router = APIRouter()
 
 @router.post("/stream")
 async def chat_stream(chat_request: ChatSessionRequest):
-    return EventSourceResponse(return_model_message(chat_request), media_type="text/plain")
+    return EventSourceResponse(return_model_message(chat_request), media_type="text/event-stream")
