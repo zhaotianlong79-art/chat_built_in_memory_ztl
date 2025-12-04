@@ -12,10 +12,10 @@ async def create_chat_session(
 ) -> ChatHistory:
     """创建新的聊天会话"""
 
-
     session = ChatHistory.objects.create(
         session_id=session_id,
-        user_id=user_id
+        user_id=user_id,
+        messages=[]
     )
     return session
 
