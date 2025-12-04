@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
-app.mount("/static", StaticFiles(directory="../static"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 include_routers(app)
 
@@ -76,11 +76,3 @@ async def health_check():
     return {"status": "ok"}
 
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",  # 确保这里的模块名和文件名匹配
-        host="0.0.0.0",
-        port=8002,
-        log_level="info",
-        reload=True
-    )
