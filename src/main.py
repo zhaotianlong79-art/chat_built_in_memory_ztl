@@ -6,6 +6,7 @@ from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 
+
 from src.config.config import settings
 from src.config.openapi_docs import get_swagger_ui_html
 from src.db_conn.mongo import init_mongo_db, close_mongo_db
