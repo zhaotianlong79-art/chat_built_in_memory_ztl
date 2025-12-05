@@ -1,0 +1,12 @@
+fastapi==0.123.9
+loguru==0.7.3
+mongoengine==0.29.1
+openai==2.9.0
+pydantic==2.12.5
+pydantic_settings==2.12.0
+pymilvus==2.4.9
+pymongo==4.15.5
+sse_starlette==3.0.2
+starlette==0.50.0
+typing_extensions==4.15.0
+uvicorn==0.38.0
