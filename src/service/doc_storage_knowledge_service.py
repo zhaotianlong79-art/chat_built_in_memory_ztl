@@ -1,0 +1,1 @@
+#把doc、docx、ppt、pdf。转化为图片
