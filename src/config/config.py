@@ -28,13 +28,29 @@ class Settings(BaseSettings):
 
     DEBUG: bool = True
 
-    MONGO_DB: str = "XX"
-    MONGO_HOST: str = "XX"
-    MONGO_PORT: int = 28018
-    MONGO_USER: str = "XXX"
+    SEARCH_CONFIG: dict = {
+        "metric_type": "IP",  # 使用内积相似度
+        "params": {"ef": 128},
+    }
+
+    MONGO_DB: str = "zkm_test"
+    MONGO_HOST: str = "XXX"
+    MONGO_PORT: int = 27017
+    MONGO_USER: str = "admin"
     MONGO_PASSWORD: str = "XXX"
-    MONGO_AUTH_SOURCE: str = "XXX"
-    MONGO_CONN_NAME: str = "XXX"
+    MONGO_AUTH_SOURCE: str = "admin"
+    MONGO_CONN_NAME: str = "default"
+
+    MILVUS_DB_HOST: str = "XXXX"
+    MILVUS_DB_PORT: int = 19530
+    MILVUS_DB_NAME: str = "default"
+    MILVUS_DB_USER: str = ""
+    MILVUS_DB_PASS: str = ""
+    MILVUS_DB_TIMEOUT: int = 30
+    MILVUS_DB_COLLECTION_NAME: str = "zkm_test"
+
+    EMBED_SERVER_URL: str = "https://api.jina.ai/v1/embeddings"
+    EMBED_SERVER_TOKEN: str = "XXX"
 
     class Config:
         env_file = ".env"
