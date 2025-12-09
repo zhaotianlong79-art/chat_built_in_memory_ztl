@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from src.api.chat import router as chat
-from src.api.doc_storage_knowledge import router as doc
+from src.api.doc2kb import router as doc
 
 api_router = APIRouter()
 

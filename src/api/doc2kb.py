@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, UploadFile, File
 
-from src.schemas.doc_storage_knowledge_schemas import DocKnowledgeBase
+from src.schemas.doc2kb_schemas import DocKnowledgeBase
 
 router = APIRouter()
 
