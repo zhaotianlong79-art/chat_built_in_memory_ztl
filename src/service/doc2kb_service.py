@@ -1,5 +1,6 @@
 import io
 import os
+import tempfile
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any
@@ -54,7 +55,7 @@ class PDFToImageService:
     def _save_temp_pdf(self, pdf_file: UploadFile) -> str:
         """保存PDF到临时文件"""
         temp_id = str(uuid.uuid4())
-        temp_pdf_path = os.path.join(TEMP_DIR, f"{temp_id}.pdf")
+        temp_pdf_path = os.path.join(tempfile.gettempdir(), f"{temp_id}.pdf")
 
         # 读取并保存PDF文件
         content = pdf_file.file.read()
