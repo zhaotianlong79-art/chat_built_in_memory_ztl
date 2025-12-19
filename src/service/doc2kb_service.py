@@ -10,6 +10,7 @@ from PIL import Image
 from fastapi import UploadFile, HTTPException
 
 from src.config.config import settings
+from src.utils.images_upload import FileUploaderFactory
 
 
 class PDFToImageService:
@@ -191,6 +192,17 @@ class PDFToImageService:
     def shutdown(self):
         """关闭线程池"""
         self.executor.shutdown(wait=True)
+
+async def upload_images2zhipu(images_data):
+    uploader = FileUploaderFactory.create_uploader('zhipu')
+    result_list = []
+    for data in images_data:
+        result = uploader.upload(
+            file_content=data["image_data"],
+            file_type='jpg'
+        )
+        data["image_url"] = result["result"]["file_url"]
+    return result_list
 
 
 # 使用示例
