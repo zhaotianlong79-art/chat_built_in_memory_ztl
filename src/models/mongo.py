@@ -31,7 +31,7 @@ class BaseDocument(Document):
 # chat_history
 class ChatHistory(BaseDocument):
     meta = {
-        'collection': 'chat_history',  # 映射到数据库 document_classify_task 集合
+        'collection': 'chat_history',  # 映射到数据库 chat_history 集合
         'indexes': ['session_id'],
     }
     session_id = StringField()  # 会话id
@@ -65,45 +65,39 @@ class ChatHistory(BaseDocument):
         return cls(**data)
 
 
-def create_chat_history(
-        session_id,
-        user_id=None,
-        messages=None
-):
-    # 创建新的任务记录
-    task = ChatHistory(
-        session_id=session_id,
-        user_id=user_id,
-        messages=messages
-    )
+class Files(BaseDocument):
+    meta = {
+        'collection': 'files',  # 映射到数据库 files 集合
+        'indexes': ['_id'],
+    }
+    file_name = StringField()  # 文件名
+    file_size = StringField()  # 文件大小
+    file_url = StringField()  # 文件url
+    file_dir = StringField()  # 文件目录
+    file_type = StringField()  # 文件类型
 
-    # 保存到数据库
-    task.save()
-    return task
+    def to_dict(self):
+        """将MongoEngine文档对象转换为可序列化的字典"""
+        data = self.to_mongo().to_dict()
 
+        # 处理ObjectId类型，转换为字符串
+        if '_id' in data:
+            data['_id'] = str(data['_id'])
 
-# 使用示例
-def main():
-    try:
-        # 初始化数据库连接
-        init_mongo_db()
+        # 处理其他可能存在的ObjectId字段
+        for key, value in data.items():
+            if isinstance(value, ObjectId):
+                data[key] = str(value)
 
-        # 创建任务
-        task = create_chat_history(
-            session_id="1234567890",
-            user_id="user123",
-            messages=[{"role": "user", "content": "你好"},
-                      {"role": "assistant", "content": "你好，有什么可以帮助你的吗？"}]
-        )
+        return data
 
-        print(f"成功创建任务，ID: {task.id}")
-
-    except Exception as e:
-        print(f"发生错误: {str(e)} {traceback.format_exception()}")
-    finally:
-        # 确保关闭数据库连接
-        close_mongo_db()
-
-
-if __name__ == "__main__":
-    main()
+    @classmethod
+    def from_dict(cls, data):
+        """从字典重建对象（如果需要的话）"""
+        # 处理_id字段的转换
+        if '_id' in data and isinstance(data['_id'], str):
+            try:
+                data['_id'] = ObjectId(data['_id'])
+            except:
+                pass
+        return cls(**data)
