@@ -7,6 +7,7 @@ from loguru import logger
 
 from src.config.config import settings
 from src.db_conn.milvus import milvus_client as Milvus
+from src.schemas.milvus_schemas import EmbedData
 
 Milvus.ensure_collection(settings.MILVUS_DB_NAME)
 
@@ -36,14 +37,16 @@ def truncate_filename(filename, max_length=25):
     return filename
 
 
-def get_default_dict(image_data: dict):
+def get_default_dict(image_data: EmbedData):
     return {
-        "embedding": image_data.get("embedding", ''),
-        "image_url": image_data.get("image_url", ''),
-        "image_width": image_data.get("width", ''),
-        "image_height": image_data.get("height", ''),
-        "file_id": image_data.get("file_id", ''),
-        "file_name": truncate_filename(image_data.get("file_name", '')),
-        "file_page": image_data.get("file_page", ''),
-        "file_url": image_data.get("file_url", ''),
+        "embedding": image_data.embedding,
+        "image_url": image_data.image_url,
+        "image_width": image_data.image_width,
+        "image_height": image_data.image_height,
+        "image_size": image_data.image_size,
+        "file_id": image_data.file_id,
+        "file_name": truncate_filename(image_data.file_name),
+        "file_page": image_data.file_page,
+        "file_url": image_data.file_url,
+        "knowledge_base_id": image_data.knowledge_base_id,
     }

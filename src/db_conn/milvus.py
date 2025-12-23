@@ -99,14 +99,15 @@ class MilvusClientWrapper:
     # 预定义集合字段 - 使用自动生成ID
     COLLECTION_FIELDS = [
         ("id", DataType.INT64, {"is_primary": True, "auto_id": True}),  # 改为自动生成ID
-        ("file_id", DataType.INT64, {}),
-        ("file_name", DataType.VARCHAR, {"max_length": 100}),
-        ("file_page", DataType.INT64, {}),
-        ("file_url", DataType.INT64, {}),
         ("embedding", DataType.FLOAT_VECTOR, {}),
         ("image_url", DataType.VARCHAR, {"max_length": 512}),
         ("image_width", DataType.INT64, {}),
         ("image_height", DataType.INT64, {}),
+        ("file_id", DataType.INT64, {}),
+        ("file_name", DataType.VARCHAR, {"max_length": 100}),
+        ("file_page", DataType.INT64, {}),
+        ("file_url", DataType.INT64, {}),
+        ("knowledge_base_id", DataType.VARCHAR, {"max_length": 100}),
     ]
 
     def __init__(self, connector: MilvusConnector):

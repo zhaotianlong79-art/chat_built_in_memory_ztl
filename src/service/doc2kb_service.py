@@ -1,6 +1,9 @@
+import asyncio
 import io
 import os
 import tempfile
+import time
+import traceback
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any
@@ -8,9 +11,24 @@ from typing import List, Dict, Any
 import fitz  # PyMuPDF
 from PIL import Image
 from fastapi import UploadFile, HTTPException
+from loguru import logger
 
 from src.config.config import settings
-from src.utils.images_upload import FileUploaderFactory
+from src.schemas.milvus_schemas import EmbedData
+from src.service.embed_service import embed_text
+from src.utils.images_upload import zhipu_image_upload
+
+
+def get_embedding(image_url):
+    try:
+        custom_input = [
+            {"image": image_url}
+        ]
+        embedding = asyncio.run(embed_text(custom_input=custom_input))
+        return embedding[0].get("embedding")
+    except Exception as e:
+        logger.error(f"get_embedding: {traceback.format_exc()}")
+        raise Exception(f"get embedding error image_url: {image_url}")
 
 
 class PDFToImageService:
@@ -72,6 +90,8 @@ class PDFToImageService:
             pdf_filename: str
     ) -> List[Dict[str, Any]]:
         """并发处理PDF转换"""
+        start_time = time.time()
+        logger.info(f"开始转化为知识库、文件：{pdf_filename}")
         # 打开PDF文件获取总页数
         doc = fitz.open(pdf_path)
         total_pages = doc.page_count
@@ -114,8 +134,10 @@ class PDFToImageService:
                 raise HTTPException(status_code=500, detail=f"页面转换失败: {str(e)}")
 
         # 按页码排序
-        images_data.sort(key=lambda x: x["page_number"])
+        # images_data.sort(key=lambda x: x["page_number"])
 
+        end_time = time.time()
+        logger.info(f"知识库转完毕、文件：{pdf_filename}、处理时间：{str(end_time - start_time)}秒")
         return images_data
 
     def _convert_single_page(
@@ -123,8 +145,10 @@ class PDFToImageService:
             pdf_path: str,
             page_num: int,
             pdf_filename: str,
+            pdf_id: str = "pdf_id",
+            pdf_url: str = "pdf_url",
             dpi: int = settings.IMAGE_DPI,
-    ) -> Dict[str, Any]:
+    ) -> EmbedData:
         """转换单个PDF页面为图片"""
         try:
             # 打开PDF文档
@@ -144,28 +168,33 @@ class PDFToImageService:
 
             # 获取图片信息
             width, height = pil_image.size
-            size_bytes = len(img_data)
 
             # 转换为JPEG格式并压缩
             img_byte_arr = io.BytesIO()
             pil_image.save(img_byte_arr, format='JPEG', quality=95)
             img_bytes = img_byte_arr.getvalue()
 
+            # 上传到图库
+            image_url = zhipu_image_upload(img_bytes).get('result').get('file_url')
+
+            # 图片向量化
+            embedding = get_embedding(image_url)
+
             doc.close()
 
-            return {
-                "pdf_name": pdf_filename,
-                "page_number": page_num,
-                "width": width,
-                "height": height,
-                "dpi": dpi,
-                "size_bytes": size_bytes,
-                "image_data": img_bytes,  # 二进制数据
-                "format": "JPEG"
-            }
+            return EmbedData(
+                embedding=embedding,
+                image_url=image_url,
+                image_width=width,
+                image_height=height,
+                file_id=pdf_id,
+                file_name=pdf_filename,
+                file_page=page_num,
+                file_url=pdf_url
+            )
 
         except Exception as e:
-            raise Exception(f"转换第 {page_num} 页失败: {str(e)}")
+            raise Exception(f"转换第 {page_num} 页失败: {str(e)} {traceback.format_exc()}")
 
     def _cleanup_temp_file(self, file_path: str):
         """清理临时文件"""
@@ -192,55 +221,3 @@ class PDFToImageService:
     def shutdown(self):
         """关闭线程池"""
         self.executor.shutdown(wait=True)
-
-async def upload_images2zhipu(images_data):
-    uploader = FileUploaderFactory.create_uploader('zhipu')
-    result_list = []
-    for data in images_data:
-        result = uploader.upload(
-            file_content=data["image_data"],
-            file_type='jpg'
-        )
-        data["image_url"] = result["result"]["file_url"]
-    return result_list
-
-
-# 使用示例
-if __name__ == "__main__":
-    # 在FastAPI中的使用示例
-    pdf_service = PDFToImageService()
-
-    # 在FastAPI路由中使用：
-    """
-    @app.post("/convert-pdf/")
-    async def convert_pdf(
-        file: UploadFile = File(...),
-        dpi: Optional[int] = None,
-        pages: Optional[str] = None  # 格式: "1,2,3" 或 "1-5"
-    ):
-        # 解析pages参数
-        page_list = None
-        if pages:
-            page_list = parse_pages_string(pages)
-
-        # 转换PDF
-        images_data = await pdf_service.convert_pdf_to_images(file, dpi, page_list)
-
-        # 返回结果
-        return {
-            "pdf_name": file.filename,
-            "total_pages": len(images_data),
-            "dpi": dpi or DPI,
-            "images": [
-                {
-                    "name": img["image_name"],
-                    "page": img["page_number"],
-                    "width": img["width"],
-                    "height": img["height"],
-                    "size": img["size_bytes"],
-                    "image_data": base64.b64encode(img["image_data"]).decode()  # 如果通过API返回
-                }
-                for img in images_data
-            ]
-        }
-    """
