@@ -147,6 +147,7 @@ class PDFToImageService:
             pdf_filename: str,
             pdf_id: str = "pdf_id",
             pdf_url: str = "pdf_url",
+            kb_id: str = "kb_id",
             dpi: int = settings.IMAGE_DPI,
     ) -> EmbedData:
         """转换单个PDF页面为图片"""
@@ -190,7 +191,8 @@ class PDFToImageService:
                 file_id=pdf_id,
                 file_name=pdf_filename,
                 file_page=page_num,
-                file_url=pdf_url
+                file_url=pdf_url,
+                knowledge_base_id=kb_id
             )
 
         except Exception as e:
