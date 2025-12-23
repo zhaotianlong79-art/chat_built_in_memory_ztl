@@ -2,7 +2,6 @@ from typing import List
 
 from fastapi import APIRouter, UploadFile, File
 
-from src.schemas.doc2kb_schemas import DocKnowledgeBase
 from src.schemas.response import response_success
 from src.service.doc2kb_service import PDFToImageService
 
@@ -23,4 +22,3 @@ async def pdf2knowledge_base(files: List[UploadFile] = File(...)):
         res.append({"file": file.filename, "image": image_data})
 
     return response_success(data=res)
-
