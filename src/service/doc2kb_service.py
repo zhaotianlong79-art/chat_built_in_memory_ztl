@@ -31,6 +31,17 @@ def get_embedding(image_url):
         raise Exception(f"get embedding error image_url: {image_url}")
 
 
+def truncate_filename(filename, max_length=25):
+    """milvus使用字节长度，一个中文是三字节25*3=75"""
+    filename = filename[8:]  # 去掉前缀的随机生产的uid
+    if len(filename) > max_length:
+        # 保留扩展名，截断主体部分
+        name, ext = os.path.splitext(filename)
+        truncated_name = name[:max_length - len(ext) - 1]  # -1 用于省略号
+        return f"{truncated_name}...{ext}"
+    return filename
+
+
 class PDFToImageService:
     def __init__(self):
         self.executor = ThreadPoolExecutor(max_workers=settings.IMAGE_MAX_WORKERS)
@@ -149,7 +160,7 @@ class PDFToImageService:
             pdf_url: str = "pdf_url",
             kb_id: str = "kb_id",
             dpi: int = settings.IMAGE_DPI,
-    ) -> EmbedData:
+    ) -> Dict:
         """转换单个PDF页面为图片"""
         try:
             # 打开PDF文档
@@ -189,11 +200,11 @@ class PDFToImageService:
                 image_width=width,
                 image_height=height,
                 file_id=pdf_id,
-                file_name=pdf_filename,
+                file_name=truncate_filename(pdf_filename),
                 file_page=page_num,
                 file_url=pdf_url,
                 knowledge_base_id=kb_id
-            )
+            ).to_dict()
 
         except Exception as e:
             raise Exception(f"转换第 {page_num} 页失败: {str(e)} {traceback.format_exc()}")
