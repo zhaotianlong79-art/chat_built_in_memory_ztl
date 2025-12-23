@@ -22,7 +22,7 @@ async def create_knowledge_base(
         return session
     except Exception as e:
         logger.error(f"Error creating knowledge_base: {traceback.format_exception()}")
-        return None
+        raise Exception("Error creating knowledge_base")
 
 
 async def delete_chat_session(knowledge_base_id: str):
@@ -33,7 +33,7 @@ async def delete_chat_session(knowledge_base_id: str):
         return True
     except Exception as e:
         logger.error(f"del knowledge_base_id {knowledge_base_id} does not exist")
-        return False
+        raise Exception("Error deleting knowledge_base")
 
 
 async def update_knowledge_base(
@@ -50,7 +50,7 @@ async def update_knowledge_base(
         return session
     except Exception as e:
         logger.error(f"Error updating knowledge_base: {traceback.format_exception()}")
-        return None
+        raise Exception("Error updating knowledge_base")
 
 
 async def get_knowledge_bases(
