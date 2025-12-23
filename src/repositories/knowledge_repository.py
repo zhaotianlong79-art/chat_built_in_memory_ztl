@@ -1,17 +1,63 @@
 import math
+import traceback
 from typing import Optional
 
 from fastapi import Query, HTTPException
+from loguru import logger
 from mongoengine.queryset.visitor import Q
 
 from src.models.mongo import KnowledgeBase, Files
 
 
+async def create_knowledge_base(
+        knowledge_description: str,
+        knowledge_name: str,
+) -> KnowledgeBase:
+    """创建新的聊天会话"""
+    try:
+        session = KnowledgeBase.objects.create(
+            knowledge_description=knowledge_description,
+            knowledge_name=knowledge_name,
+        )
+        return session
+    except Exception as e:
+        logger.error(f"Error creating knowledge_base: {traceback.format_exception()}")
+        return None
+
+
+async def delete_chat_session(knowledge_base_id: str):
+    try:
+        session = KnowledgeBase.objects.get(id=knowledge_base_id)
+        # 删除知识库
+        session.delete()
+        return True
+    except Exception as e:
+        logger.error(f"del knowledge_base_id {knowledge_base_id} does not exist")
+        return False
+
+
+async def update_knowledge_base(
+        knowledge_base_id: str,
+        knowledge_description: str,
+        knowledge_name: str,
+) -> KnowledgeBase:
+    """更新知识库"""
+    try:
+        session = KnowledgeBase.objects.get(id=knowledge_base_id)
+        session.knowledge_description = knowledge_description
+        session.knowledge_name = knowledge_name
+        session.save()
+        return session
+    except Exception as e:
+        logger.error(f"Error updating knowledge_base: {traceback.format_exception()}")
+        return None
+
+
 async def get_knowledge_bases(
-        page: int = Query(1, description="页码", ge=1),
-        page_size: int = Query(10, description="每页数量", ge=1, le=100),
-        knowledge_name: Optional[str] = Query(None, description="知识库名称（模糊查询）"),
-        order_by: str = Query("-created_at", description="排序字段，-表示降序，+表示升序")
+        page: int = Query(default=1, description="页码", ge=1),
+        page_size: int = Query(default=10, description="每页数量", ge=1, le=100),
+        knowledge_name: Optional[str] = Query(default=None, description="知识库名称（模糊查询）"),
+        order_by: str = Query(default="-create_time", description="排序字段，-表示降序，+表示升序")
 ):
     """分页查询知识库"""
     try:
@@ -73,11 +119,11 @@ async def get_knowledge_bases(
 
 async def get_knowledge_file(
         knowledge_base_id: str = Query(..., description="知识库ID"),
-        page: int = Query(1, description="页码", ge=1),
-        page_size: int = Query(10, description="每页数量", ge=1, le=100),
-        file_name: Optional[str] = Query(None, description="文件名（模糊查询）"),
-        file_type: Optional[str] = Query(None, description="文件类型"),
-        order_by: str = Query("-created_at", description="排序字段，-表示降序，+表示升序")
+        page: int = Query(default=1, description="页码", ge=1),
+        page_size: int = Query(default=10, description="每页数量", ge=1, le=100),
+        file_name: Optional[str] = Query(default=None, description="文件名（模糊查询）"),
+        file_type: Optional[str] = Query(default=None, description="文件类型"),
+        order_by: str = Query(default="-create_time", description="排序字段，-表示降序，+表示升序")
 ):
     """分页查询知识库的包含的文件"""
     try:
@@ -149,79 +195,5 @@ async def get_knowledge_file(
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"查询失败: {str(e)}")
-
-
-# 如果你还需要一个更简单的版本，这里是一个基本版本：
-async def get_knowledge_bases_simple(
-        page: int = 1,
-        page_size: int = 10
-):
-    """简单分页查询知识库"""
-    try:
-        skip_count = (page - 1) * page_size
-
-        # 查询数据
-        knowledge_bases = KnowledgeBase.objects() \
-            .skip(skip_count) \
-            .limit(page_size)
-
-        # 获取总数
-        total = KnowledgeBase.objects().count()
-
-        items = []
-        for kb in knowledge_bases:
-            items.append({
-                "id": str(kb.id),
-                "knowledge_name": kb.knowledge_name,
-                "knowledge_description": kb.knowledge_description
-            })
-
-        return {
-            "items": items,
-            "page": page,
-            "page_size": page_size,
-            "total": total
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"查询失败: {str(e)}")
-
-
-async def get_knowledge_file_simple(
-        knowledge_base_id: str,
-        page: int = 1,
-        page_size: int = 10
-):
-    """简单分页查询知识库文件"""
-    try:
-        skip_count = (page - 1) * page_size
-
-        # 查询数据
-        files = Files.objects(knowledge_base_id=knowledge_base_id) \
-            .skip(skip_count) \
-            .limit(page_size)
-
-        # 获取总数
-        total = Files.objects(knowledge_base_id=knowledge_base_id).count()
-
-        items = []
-        for file in files:
-            items.append({
-                "id": str(file.id),
-                "file_name": file.file_name,
-                "file_size": file.file_size,
-                "file_url": file.file_url,
-                "file_type": file.file_type
-            })
-
-        return {
-            "items": items,
-            "page": page,
-            "page_size": page_size,
-            "total": total
-        }
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"查询失败: {str(e)}")
