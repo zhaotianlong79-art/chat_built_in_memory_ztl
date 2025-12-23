@@ -1,10 +1,15 @@
+import asyncio
 import tempfile
+import traceback
 from abc import ABC, abstractmethod
+import time
 from typing import Dict, Any, Optional
 
 import requests
+from loguru import logger
 
 from src.config.config import settings
+from src.service.embed_service import embed_text
 
 
 def generate_temp_filename(suffix='.jpg'):
@@ -82,11 +87,27 @@ def zhipu_image_upload(image_data: bytes) -> Optional[Dict[str, Any]]:
         )
         return result
     except Exception as e:
+        logger.error(f"upload images data error: {traceback.format_exc()}")
         return None
 
 
-if __name__ == '__main__':
+async def test(image_url: str):
+    custom_input = [
+        {"image": image_url}
+    ]
+    embedding = await embed_text(custom_input=custom_input)
+    return embedding[0].get("embedding")
+
+
+def main():
     with open(r'C:\Users\zhaokunming\Pictures\Saved Pictures\beach2.jpg', 'rb') as f:
         image_data = f.read()
-    result = zhipu_image_upload(image_data)
+    image_url = zhipu_image_upload(image_data).get('result').get('file_url')
+    result = asyncio.run(test(image_url))
     print(result)
+
+
+if __name__ == '__main__':
+    start = time.time()
+    main()
+    print(start - time.time())
