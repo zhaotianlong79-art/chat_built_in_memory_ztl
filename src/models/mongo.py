@@ -1,10 +1,7 @@
 import datetime
-import traceback
 
 from bson import ObjectId
-from mongoengine import Document, DateTimeField, StringField, DictField, ListField
-
-from src.db_conn.mongo import init_mongo_db, close_mongo_db
+from mongoengine import Document, DateTimeField, StringField, ListField
 
 
 class BaseDocument(Document):
@@ -65,16 +62,25 @@ class ChatHistory(BaseDocument):
         return cls(**data)
 
 
+class KnowledgeBase(BaseDocument):
+    meta = {
+        'collection': 'knowledge_base',  # 映射到数据库 knowledge_base 集合
+        'indexes': ['knowledge_name'],
+    }
+    knowledge_name = StringField()  # 知识库名称
+    knowledge_description = StringField()  # 知识库描述
+
+
 class Files(BaseDocument):
     meta = {
         'collection': 'files',  # 映射到数据库 files 集合
-        'indexes': ['_id'],
+        'indexes': ['knowledge_base_id'],
     }
     file_name = StringField()  # 文件名
     file_size = StringField()  # 文件大小
     file_url = StringField()  # 文件url
-    file_dir = StringField()  # 文件目录
     file_type = StringField()  # 文件类型
+    knowledge_base_id = StringField()  # 知识库id
 
     def to_dict(self):
         """将MongoEngine文档对象转换为可序列化的字典"""
