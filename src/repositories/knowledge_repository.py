@@ -18,6 +18,7 @@ async def create_knowledge_base(
             knowledge_description=knowledge_description,
             knowledge_name=knowledge_name,
         )
+        session.save()
         return session
     except Exception as e:
         logger.error(f"Error creating knowledge_base: {traceback.format_exception()}")
