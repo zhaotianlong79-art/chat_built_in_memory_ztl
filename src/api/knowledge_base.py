@@ -1,10 +1,11 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter
 
 from src.repositories.knowledge_repository import (
     create_knowledge_base,
     update_knowledge_base,
     delete_knowledge_base,
-    select_knowledge_bases, select_knowledge_file
+    select_knowledge_bases,
+    select_knowledge_file
 )
 from src.schemas.knowledge_base_schemas import (
     CreateKnowledgeBaseParams,
