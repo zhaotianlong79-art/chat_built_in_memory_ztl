@@ -63,8 +63,12 @@ async def create_kb_data(params: CreateKnowledgeBaseParams):
 @router.post("/update")
 async def update_kb_data(params: UpdateKnowledgeBaseParams):
     try:
-        kb = await update_knowledge_base(params.knowledge_base_id, params.knowledge_description, params.knowledge_name)
-        return response_success(data=kb.to_json())
+        kb = await update_knowledge_base(
+            params.knowledge_base_id,
+            params.knowledge_description,
+            params.knowledge_base_name
+        )
+        return response_success(data=kb.to_dict())
     except Exception as e:
         return response_error(str(e))
 
