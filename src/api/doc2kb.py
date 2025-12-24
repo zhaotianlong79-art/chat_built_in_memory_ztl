@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 from fastapi import APIRouter, UploadFile, File, Form
@@ -15,16 +16,27 @@ async def doc2knowledge_base(files: List[UploadFile] = File(...)):
 
 @router.post("/pdf2knowledge_base")
 async def pdf2knowledge_base(
-        files: List[UploadFile] = File(...),
+        files: List[UploadFile] = File(..., description="上传文件列表"),
         knowledge_base_id: str = Form(..., description="知识库名字"),
 ):
     pdf_service = PDFToImageService()
-    res = []
+
+    # 创建并发的任务列表
+    tasks = []
     for file in files:
-        image_data = await pdf_service.convert_pdf_to_images(
+        task = pdf_service.convert_pdf_to_images(
             pdf_file=file,
             knowledge_base_id=knowledge_base_id
         )
-        res.append({"file": file.filename, "image": image_data})
+        tasks.append(task)
 
-    return response_success(data=res)
+    # 并发执行所有任务
+    image_data_list = await asyncio.gather(*tasks)
+
+    # 组装结果
+    res = [
+        {"file": file.filename, "image": image_data}
+        for file, image_data in zip(files, image_data_list)
+    ]
+
+    return response_success(data={"msg": "success" if res else "fail"})
