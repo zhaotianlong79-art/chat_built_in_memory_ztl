@@ -13,7 +13,6 @@ async def create_knowledge_base(
         knowledge_description: str,
         knowledge_name: str,
 ) -> KnowledgeBase:
-    """创建新的聊天会话"""
     try:
         session = KnowledgeBase.objects.create(
             knowledge_description=knowledge_description,
@@ -25,7 +24,7 @@ async def create_knowledge_base(
         raise Exception("Error creating knowledge_base")
 
 
-async def delete_chat_session(knowledge_base_id: str):
+async def delete_knowledge_base(knowledge_base_id: str):
     try:
         session = KnowledgeBase.objects.get(id=knowledge_base_id)
         # 删除知识库
@@ -41,7 +40,6 @@ async def update_knowledge_base(
         knowledge_description: str,
         knowledge_name: str,
 ) -> KnowledgeBase:
-    """更新知识库"""
     try:
         session = KnowledgeBase.objects.get(id=knowledge_base_id)
         session.knowledge_description = knowledge_description
@@ -53,7 +51,7 @@ async def update_knowledge_base(
         raise Exception("Error updating knowledge_base")
 
 
-async def get_knowledge_bases(
+async def select_knowledge_bases(
         page: int = Query(default=1, description="页码", ge=1),
         page_size: int = Query(default=10, description="每页数量", ge=1, le=100),
         knowledge_name: Optional[str] = Query(default=None, description="知识库名称（模糊查询）"),
@@ -117,7 +115,7 @@ async def get_knowledge_bases(
         raise HTTPException(status_code=500, detail=f"查询失败: {str(e)}")
 
 
-async def get_knowledge_file(
+async def select_knowledge_file(
         knowledge_base_id: str = Query(..., description="知识库ID"),
         page: int = Query(default=1, description="页码", ge=1),
         page_size: int = Query(default=10, description="每页数量", ge=1, le=100),
