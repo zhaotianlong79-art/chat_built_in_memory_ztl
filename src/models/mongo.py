@@ -24,17 +24,6 @@ class BaseDocument(Document):
         """
         return super().delete(*args, **kwargs)
 
-
-# chat_history
-class ChatHistory(BaseDocument):
-    meta = {
-        'collection': 'chat_history',  # 映射到数据库 chat_history 集合
-        'indexes': ['session_id'],
-    }
-    session_id = StringField()  # 会话id
-    user_id = StringField()  # 用户id
-    messages = ListField(default=list)  # 消息列表
-
     def to_dict(self):
         """将MongoEngine文档对象转换为可序列化的字典"""
         data = self.to_mongo().to_dict()
@@ -60,6 +49,17 @@ class ChatHistory(BaseDocument):
             except:
                 pass
         return cls(**data)
+
+
+# chat_history
+class ChatHistory(BaseDocument):
+    meta = {
+        'collection': 'chat_history',  # 映射到数据库 chat_history 集合
+        'indexes': ['session_id'],
+    }
+    session_id = StringField()  # 会话id
+    user_id = StringField()  # 用户id
+    messages = ListField(default=list)  # 消息列表
 
 
 class KnowledgeBase(BaseDocument):
@@ -81,29 +81,3 @@ class Files(BaseDocument):
     file_url = StringField()  # 文件url
     file_type = StringField()  # 文件类型
     knowledge_base_id = StringField()  # 知识库id
-
-    def to_dict(self):
-        """将MongoEngine文档对象转换为可序列化的字典"""
-        data = self.to_mongo().to_dict()
-
-        # 处理ObjectId类型，转换为字符串
-        if '_id' in data:
-            data['_id'] = str(data['_id'])
-
-        # 处理其他可能存在的ObjectId字段
-        for key, value in data.items():
-            if isinstance(value, ObjectId):
-                data[key] = str(value)
-
-        return data
-
-    @classmethod
-    def from_dict(cls, data):
-        """从字典重建对象（如果需要的话）"""
-        # 处理_id字段的转换
-        if '_id' in data and isinstance(data['_id'], str):
-            try:
-                data['_id'] = ObjectId(data['_id'])
-            except:
-                pass
-        return cls(**data)
