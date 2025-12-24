@@ -21,7 +21,7 @@ router = APIRouter()
 @router.post("/select")
 async def select_kb_data(params: SelectKnowledgeBaseParams):
     try:
-        kb = select_knowledge_bases(
+        kb = await select_knowledge_bases(
             page=params.page,
             page_size=params.page_size,
             knowledge_name=params.knowledge_name,
@@ -35,7 +35,7 @@ async def select_kb_data(params: SelectKnowledgeBaseParams):
 @router.post("/select_files")
 async def select_kb_data(params: SelectKnowledgeBaseFilesParams):
     try:
-        kb = select_knowledge_file(
+        kb = await select_knowledge_file(
             knowledge_base_id=params.knowledge_base_id,
             page=params.page,
             page_size=params.page_size,
@@ -51,8 +51,11 @@ async def select_kb_data(params: SelectKnowledgeBaseFilesParams):
 @router.post("/create")
 async def create_kb_data(params: CreateKnowledgeBaseParams):
     try:
-        kb = create_knowledge_base(params.knowledge_description, params.knowledge_name)
-        return response_success(data=kb)
+        kb = await create_knowledge_base(
+            knowledge_description=params.knowledge_description,
+            knowledge_name=params.knowledge_base_name
+        )
+        return response_success(data=kb.to_dict())
     except Exception as e:
         return response_error(str(e))
 
@@ -60,8 +63,8 @@ async def create_kb_data(params: CreateKnowledgeBaseParams):
 @router.post("/update")
 async def update_kb_data(params: UpdateKnowledgeBaseParams):
     try:
-        kb = update_knowledge_base(params.knowledge_base_id, params.knowledge_description, params.knowledge_name)
-        return response_success(data=kb)
+        kb = await update_knowledge_base(params.knowledge_base_id, params.knowledge_description, params.knowledge_name)
+        return response_success(data=kb.to_json())
     except Exception as e:
         return response_error(str(e))
 
@@ -69,7 +72,7 @@ async def update_kb_data(params: UpdateKnowledgeBaseParams):
 @router.post("/delete")
 async def delete_kb_data(params: UpdateKnowledgeBaseParams):
     try:
-        kb = delete_knowledge_base(params.knowledge_base_id)
+        kb = await delete_knowledge_base(params.knowledge_base_id)
         return response_success(data=kb)
     except Exception as e:
         return response_error(str(e))
