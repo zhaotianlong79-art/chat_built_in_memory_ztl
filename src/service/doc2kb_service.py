@@ -14,6 +14,7 @@ from fastapi import UploadFile, HTTPException
 from loguru import logger
 
 from src.config.config import settings
+from src.repositories.file_repository import create_file_data
 from src.schemas.milvus_schemas import EmbedData
 from src.service.embed_service import embed_text
 from src.utils.images_upload import zhipu_image_upload
@@ -49,19 +50,10 @@ class PDFToImageService:
     async def convert_pdf_to_images(
             self,
             pdf_file: UploadFile,
+            knowledge_base_id: str,
             pages: List[int] = None
     ) -> List[Dict[str, Any]]:
-        """
-        将PDF文件转换为图片列表
-
-        Args:
-            pdf_file: 上传的PDF文件
-            dpi: 转换DPI（默认为全局DPI）
-            pages: 指定转换的页码列表（从1开始），None表示转换所有页
-
-        Returns:
-            图片数据列表，每个元素包含图片信息
-        """
+        """将PDF文件转换为图片列表"""
 
         # 验证文件类型
         if not pdf_file.filename.lower().endswith('.pdf'):
@@ -72,7 +64,12 @@ class PDFToImageService:
             temp_pdf_path = self._save_temp_pdf(pdf_file)
 
             # 并发处理PDF转换
-            images_data = await self._process_pdf_concurrent(temp_pdf_path, pages, pdf_file.filename)
+            images_data = await self._process_pdf_concurrent(
+                temp_pdf_path,
+                pages,
+                pdf_file.filename,
+                knowledge_base_id
+            )
 
             # 清理临时PDF文件
             self._cleanup_temp_file(temp_pdf_path)
@@ -98,11 +95,22 @@ class PDFToImageService:
             self,
             pdf_path: str,
             pages: List[int],
-            pdf_filename: str
+            pdf_filename: str,
+            knowledge_base_id: str
     ) -> List[Dict[str, Any]]:
         """并发处理PDF转换"""
         start_time = time.time()
         logger.info(f"开始转化为知识库、文件：{pdf_filename}")
+
+        # 记录文件
+        await create_file_data(
+            file_name=pdf_filename,
+            file_size=str(os.path.getsize(pdf_path)) + "（bytes）",
+            file_url="file_url",
+            file_type=os.path.splitext(pdf_filename)[1],
+            knowledge_base_id=knowledge_base_id,
+        )
+
         # 打开PDF文件获取总页数
         doc = fitz.open(pdf_path)
         total_pages = doc.page_count
