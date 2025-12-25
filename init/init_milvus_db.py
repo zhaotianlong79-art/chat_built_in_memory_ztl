@@ -97,7 +97,7 @@ class CollectionCreator:
             logger.error(f"Unexpected error: {e}")
             raise
 
-    def _create_indexes(self, collection_name: str, dimension: int, metric_type: str) -> None:
+    def _create_indexes(self, collection_name: str, dimension: int, metric_type: str="IP") -> None:
         """创建向量和标量索引"""
         client = self.connector.client
 
@@ -114,7 +114,7 @@ class CollectionCreator:
 
         # 标量索引 (INVERTED)
         scalar_index_params = client.prepare_index_params()
-        for field_name in ["image_url", "file_name"]:
+        for field_name in ["knowledge_base_id", "file_name"]:
             scalar_index_params.add_index(
                 field_name=field_name,
                 index_type="INVERTED"
