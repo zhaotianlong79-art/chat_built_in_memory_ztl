@@ -16,6 +16,7 @@ from src.config.config import settings
 from src.repositories.file_repository import create_file_data
 from src.schemas.milvus_schemas import EmbedData
 from src.service.embed_service import embed_text
+from src.service.save_kb_service import save_kb_milvus
 from src.utils.images_upload import zhipu_image_upload
 
 
@@ -185,6 +186,10 @@ class PDFToImageService:
             f"失败页数：{len(failed_pages)}，"
             f"处理时间：{end_time - start_time:.2f}秒"
         )
+        try:
+            await save_kb_milvus(images_data)
+        except Exception as e:
+            logger.error(f"保存到向量数据库失败: {str(e)} {traceback.format_exc()}")
 
         return images_data
 
@@ -241,7 +246,7 @@ class PDFToImageService:
                     image_url=image_url,
                     image_width=pix.width,
                     image_height=pix.height,
-                    file_id=pdf_id,
+                    file_id=str(pdf_id),
                     file_name=truncate_filename(pdf_filename),
                     file_page=page_num,
                     file_url=pdf_url,
