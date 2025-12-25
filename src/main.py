@@ -1,20 +1,20 @@
-import uvicorn
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, applications
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
+from loguru import logger
 from opentelemetry import trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.trace import TracerProvider
 
-
 from src.config.config import settings
 from src.config.openapi_docs import get_swagger_ui_html
+from src.db_conn.milvus import milvus_client as Milvus
 from src.db_conn.mongo import init_mongo_db, close_mongo_db
 from src.handlers import include_routers
 from src.middleware.log import init_stdout_logger
-from loguru import logger
-from contextlib import asynccontextmanager
-from fastapi.responses import ORJSONResponse
 
 # 根据是否 debug 获取 api 文档地址, 非 debug 就加上 nginx 配置的路由地址, 这样可以正确访问到项目的静态资源
 swagger_js_url = "/static/swagger-ui-bundle.js" if settings.DEBUG else f"{settings.nginx_url}/static/swagger-ui-bundle.js"
@@ -46,10 +46,13 @@ async def lifespan(app: FastAPI):
     """应用生命周期"""
     logger.info("Starting up")
     init_mongo_db()
+    Milvus.ensure_collection(settings.MILVUS_DB_COLLECTION_NAME)
+
     try:
         yield
     finally:
         close_mongo_db()
+
         logger.info("Application shutdown")
 
 
@@ -75,5 +78,3 @@ if settings.DEBUG:
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
-
-
