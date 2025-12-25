@@ -134,7 +134,7 @@ class MilvusClientWrapper:
 
     def ensure_collection(
             self,
-            collection_name: str = "colqwen_v1_0",
+            collection_name: str = settings.MILVUS_DB_COLLECTION_NAME,
             dimension: int = 2048,
             metric_type: str = settings.SEARCH_CONFIG['metric_type']
     ) -> None:
@@ -202,7 +202,7 @@ class MilvusClientWrapper:
 
             # 为标量字段创建索引
             scalar_index_params = client.prepare_index_params()
-            field_names = ["image_url", "file_name"]
+            field_names = ["knowledge_base_id", "file_name"]
             for name in field_names:
                 scalar_index_params.add_index(
                     field_name=name,
