@@ -21,27 +21,17 @@ class MilvusConfig:
 
 
 class MilvusConnector:
-    """Milvus 连接管理器，负责建立和维护连接"""
-
     def __init__(self, config: Optional[MilvusConfig] = None):
         self._client: Optional[MilvusClient] = None
+        self._connected: bool = False
         self.config = config or MilvusConfig()
 
-    @property
-    def client(self) -> MilvusClient:
-        """获取Milvus客户端实例"""
-        if self._client is None or not self.is_connected():
-            self.connect()
-        return self._client
-
     def connect(self) -> None:
-        """建立Milvus连接"""
-        if self._client is not None:
-            logger.warning("Milvus connection already exists")
+        if self._connected:
             return
 
+        milvus_url = f"http://{self.config.host}:{self.config.port}"
         try:
-            milvus_url = f"http://{self.config.host}:{self.config.port}"
             self._client = MilvusClient(
                 uri=milvus_url,
                 db_name=self.config.db_name,
@@ -49,48 +39,21 @@ class MilvusConnector:
                 user=self.config.user,
                 password=self.config.password,
             )
-
-            # 测试连接是否有效
+            # 只做一次轻量验证
             self._client.list_collections()
+            self._connected = True
             logger.info(f"Successfully connected to Milvus at {milvus_url}")
-        except MilvusException as e:
-            logger.error(f"Milvus connection error: {str(e)}")
+        except Exception:
             self._client = None
-            raise ConnectionError(f"Failed to connect to Milvus: {str(e)}")
-        except Exception as e:
-            logger.error(f"Unexpected connection error: {str(e)}")
-            self._client = None
-            raise ConnectionError(f"Failed to connect to Milvus: {str(e)}")
+            self._connected = False
+            logger.exception("Failed to connect to Milvus")
+            raise
 
-    def disconnect(self) -> None:
-        """断开Milvus连接"""
-        if self._client is not None:
-            try:
-                self._client.close()
-                logger.info("Successfully disconnected from Milvus")
-            except Exception as e:
-                logger.error(f"Error while disconnecting from Milvus: {str(e)}")
-            finally:
-                self._client = None
-
-    def is_connected(self) -> bool:
-        """检查连接状态"""
-        if self._client is None:
-            return False
-        try:
-            self._client.get_server_version()
-            return True
-        except:
-            return False
-
-    def __enter__(self):
-        """支持上下文管理器协议"""
-        self.connect()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """支持上下文管理器协议"""
-        self.disconnect()
+    @property
+    def client(self) -> MilvusClient:
+        if not self._connected:
+            self.connect()
+        return self._client
 
 
 class MilvusClientWrapper:
@@ -103,10 +66,10 @@ class MilvusClientWrapper:
         ("image_url", DataType.VARCHAR, {"max_length": 512}),
         ("image_width", DataType.INT64, {}),
         ("image_height", DataType.INT64, {}),
-        ("file_id", DataType.INT64, {}),
+        ("file_id", DataType.VARCHAR, {"max_length": 100}),
         ("file_name", DataType.VARCHAR, {"max_length": 100}),
         ("file_page", DataType.INT64, {}),
-        ("file_url", DataType.INT64, {}),
+        ("file_url", DataType.VARCHAR, {"max_length": 512}),
         ("knowledge_base_id", DataType.VARCHAR, {"max_length": 100}),
     ]
 
@@ -117,8 +80,7 @@ class MilvusClientWrapper:
 
     def _ensure_connected(self) -> None:
         """确保已建立连接"""
-        if not self.connector.is_connected():
-            self.connector.connect()
+        self.connector.connect()
 
     def _wait_for_collection_load(self, collection_name: str, timeout: int = 30) -> None:
         """等待集合加载完成"""
@@ -320,18 +282,13 @@ class MilvusClientWrapper:
             raise
 
 
-def _connector():
-    # 创建配置
-    config = MilvusConfig(
-        host=settings.MILVUS_DB_HOST,
-        port=settings.MILVUS_DB_PORT,
-        db_name=settings.MILVUS_DB_NAME,
-        user=settings.MILVUS_DB_USER,
-        password=settings.MILVUS_DB_PASS,
-        timeout=settings.MILVUS_DB_TIMEOUT
-    )
-    connector_ = MilvusConnector(config)
-    return MilvusClientWrapper(connector_)
+_milvus_client: Optional[MilvusClientWrapper] = None
 
 
-milvus_client = _connector()
+def get_milvus_client() -> MilvusClientWrapper:
+    global _milvus_client
+    if _milvus_client is None:
+        config = MilvusConfig()
+        connector = MilvusConnector(config)
+        _milvus_client = MilvusClientWrapper(connector)
+    return _milvus_client
