@@ -129,9 +129,10 @@ class PDFToImageService:
             logger.error(f"打开PDF文件失败: {str(e)}")
             raise
 
-        # 记录文件信息（可以考虑异步化）
+        # 记录文件信息
+        pdf_file = None
         try:
-            await create_file_data(
+            pdf_file = await create_file_data(
                 file_name=pdf_filename,
                 file_size=str(os.path.getsize(pdf_path)) + "（bytes）",
                 file_url="file_url",
@@ -149,8 +150,8 @@ class PDFToImageService:
                 pdf_path,
                 page_num,
                 pdf_filename,
-                "pdf_id",  # 需要从外部传入
-                "pdf_url",  # 需要从外部传入
+                pdf_file.id if pdf_file else "file_id",  # 需要从外部传入
+                pdf_file.file_url if pdf_file else "file_url",  # 需要从外部传入
                 knowledge_base_id,
                 settings.IMAGE_DPI
             )
