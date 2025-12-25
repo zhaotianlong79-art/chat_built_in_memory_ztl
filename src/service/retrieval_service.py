@@ -1,4 +1,5 @@
 import traceback
+import time
 from typing import List, Any, Dict
 
 from loguru import logger
@@ -59,13 +60,13 @@ async def _get_formatted_results(
 
 
 async def retrieval_image(params: SearchDocumentImagesParams) -> list[dict[str, Any]]:
+    start_time = time.time()
     try:
         _filter = get_filter_conditions(params)
 
         output_fields = ["image_url", "image_height", "image_width", "file_page", "file_id", "file_name"]
 
         query_vectors = await get_embedding(params.query)
-
         results = milvus.search(
             collection_name=settings.MILVUS_DB_COLLECTION_NAME,
             query_vectors=[query_vectors],
@@ -74,6 +75,7 @@ async def retrieval_image(params: SearchDocumentImagesParams) -> list[dict[str, 
             limit=params.limit,
             filter=_filter
         )
+        logger.info(f"milvus search image: {time.time() - start_time} seconds")
         return await _get_formatted_results(params, results)
 
     except Exception as e:

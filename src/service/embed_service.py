@@ -1,11 +1,16 @@
 import asyncio
+import time
 from typing import Optional
+
+from loguru import logger
 
 from src.third_party_service.jina import get_embeddings_async
 
 
 async def embed_text(custom_input: Optional[list] = None):
+    start_time = time.time()
     embed_data = await get_embeddings_async(custom_input=custom_input)
+    logger.info(f"get embeddings : {time.time() - start_time}")
     return embed_data
 
 
