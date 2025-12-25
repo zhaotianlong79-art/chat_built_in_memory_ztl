@@ -21,10 +21,10 @@ class CollectionCreator:
         ("image_url", DataType.VARCHAR, {"max_length": 512}),
         ("image_width", DataType.INT64, {}),
         ("image_height", DataType.INT64, {}),
-        ("file_id", DataType.INT64, {}),
+        ("file_id", DataType.VARCHAR, {"max_length": 100}),
         ("file_name", DataType.VARCHAR, {"max_length": 100}),
         ("file_page", DataType.INT64, {}),
-        ("file_url", DataType.INT64, {}),
+        ("file_url", DataType.VARCHAR, {"max_length": 512}),
         ("knowledge_base_id", DataType.VARCHAR, {"max_length": 100}),
     ]
 
