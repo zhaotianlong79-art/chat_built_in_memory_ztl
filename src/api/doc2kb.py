@@ -29,7 +29,7 @@ async def pdf2knowledge_base(
         pdf_service: PDFToImageService = Depends(get_pdf_service)
 ):
     if not files:
-        return response_error(code=400, message="请至少上传一个文件")
+        return response_error(message="请至少上传一个文件")
 
     # 创建并发的任务列表
     tasks = []
