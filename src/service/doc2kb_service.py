@@ -180,7 +180,11 @@ class PDFToImageService:
 
         end_time = time.time()
         logger.info(
-            f"知识库转换完成，文件：{pdf_filename}，总页数：{len(images_data)}，失败页数：{len(failed_pages)}，处理时间：{end_time - start_time:.2f}秒")
+            f"知识库转换完成，文件：{pdf_filename}，"
+            f"总页数：{len(images_data)}，"
+            f"失败页数：{len(failed_pages)}，"
+            f"处理时间：{end_time - start_time:.2f}秒"
+        )
 
         return images_data
 
