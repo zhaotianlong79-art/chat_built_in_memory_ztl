@@ -12,14 +12,14 @@ def replace_key_by_map(string: str, key_value_map: dict) -> str:
 
 def get_default_user_prompt(string: UserPromptParams, prompt=USER_PROMPT) -> str:
     USER_PROMPT_KEY_MAP = {
-        "domain": UserPromptParams.domain,
-        "skill": UserPromptParams.skill,
-        "task_escription": UserPromptParams.task_description,
-        "user_input": UserPromptParams.user_input,
-        "step_one": UserPromptParams.step_one,
-        "detailed_format_requirements": UserPromptParams.detailed_format_requirements,
-        "notes": UserPromptParams.notes,
-        "academic_document_processing_example": UserPromptParams.academic_document_processing_example,
-        "references": UserPromptParams.references
+        "domain": string.domain,
+        "skill": string.skill,
+        "task_escription": string.task_description,
+        "user_input": string.user_input,
+        "step_one": string.step_one,
+        "detailed_format_requirements": string.detailed_format_requirements,
+        "notes": string.notes,
+        "academic_document_processing_example": string.academic_document_processing_example,
+        "references": string.references
     }
     return replace_key_by_map(prompt, USER_PROMPT_KEY_MAP)
