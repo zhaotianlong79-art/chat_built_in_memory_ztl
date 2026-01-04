@@ -21,6 +21,10 @@ def get_assistant_content(assistant_text: str):
     return {"role": "assistant", "content": assistant_text}
 
 
+def get_system_content(system_text: str):
+    return {"role": "system", "content": system_text}
+
+
 class StreamChatSessionManager:
     """
     支持流式输出（yield）的 OpenAI 会话管理器
