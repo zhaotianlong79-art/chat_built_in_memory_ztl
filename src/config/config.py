@@ -41,16 +41,25 @@ class Settings(BaseSettings):
     MONGO_AUTH_SOURCE: str = "admin"
     MONGO_CONN_NAME: str = "default"
 
-    MILVUS_DB_HOST: str = "XXXX"
-    MILVUS_DB_PORT: int = 19530
+    MILVUS_DB_HOST: str = "XXX"
+    MILVUS_DB_PORT: int = 29530
     MILVUS_DB_NAME: str = "default"
     MILVUS_DB_USER: str = ""
     MILVUS_DB_PASS: str = ""
     MILVUS_DB_TIMEOUT: int = 30
     MILVUS_DB_COLLECTION_NAME: str = "zkm_test"
 
+
     EMBED_SERVER_URL: str = "https://api.jina.ai/v1/embeddings"
     EMBED_SERVER_TOKEN: str = "XXX"
+
+    IMAGE_DPI: int = 160
+    IMAGE_UPLOAD_SERVE: str = "XXXX"
+    IMAGE_MAX_WORKERS: int = 4
+
+    MODEL_NAME: str = "qwen",
+    MODEL_API_KEY: str = "XXX",
+    MODEL_BASE_URL: str = "http://XXXX/v1"
 
     class Config:
         env_file = ".env"

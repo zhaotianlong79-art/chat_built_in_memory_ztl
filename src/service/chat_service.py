@@ -4,6 +4,7 @@ from typing import List, AsyncGenerator
 from loguru import logger
 from openai import OpenAI
 
+from src.config.config import settings
 from src.repositories.chat_repository import (
     create_chat_session,
     get_chat_session,
@@ -34,9 +35,9 @@ class StreamChatSessionManager:
             self,
             session_id: str,
             user_id: str,
-            model: str = "qwen",
-            api_key: str = "zhaokunmingshidashuaibi.",
-            base_url: str = "https://cm-vrag.sci-brain.cn/api/v1"
+            model: str = settings.MODEL_NAME,
+            api_key: str = settings.MODEL_API_KEY,
+            base_url: str = settings.MODEL_BASE_URL
     ):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.session_id = session_id
