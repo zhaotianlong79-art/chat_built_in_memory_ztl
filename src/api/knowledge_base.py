@@ -73,7 +73,7 @@ async def update_kb_data(params: UpdateKnowledgeBaseParams):
         return response_error(str(e))
 
 
-@router.post("/delete")
+@router.delete("/delete")
 async def delete_kb_data(params: UpdateKnowledgeBaseParams):
     try:
         kb = await delete_knowledge_base(params.knowledge_base_id)
